@@ -22,3 +22,28 @@ tr:hover {background-color: #f5f5f5}
 button{
   margin: 5px;
 }
+
+html, body, .container {
+    height: 100%;
+}
+.container {
+    display: table;
+    vertical-align: middle;
+}
+
+.vertical-center {
+  min-height: 100%;  /* Fallback for browsers do NOT support vh unit */
+  min-height: 100vh; /* These two lines are counted as one :-)       */
+
+  display: flex;
+  align-items: center;
+}
+
+.logout-button {
+	margin-right: 2px;
+}
+
+.logout-text {
+	margin-right: 2px;
+}
+

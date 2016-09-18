@@ -5,7 +5,7 @@ var Table = React.createClass({
     mixins: [ReactFireMixin],
 
     getInitialState: function() {
-        return {data: [], fire: {}};
+        return {data: []};
     },
 
     update: function() {

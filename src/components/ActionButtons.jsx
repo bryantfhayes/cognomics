@@ -5,15 +5,18 @@ var HTTP = require('../services/httpservices.js');
 var ActionButtons = React.createClass({
     
     approveVote: function(e) {
-        HTTP.post('/post-vote', {vote: 'approved'})
+        var user = firebase.auth().currentUser;
+        HTTP.post('/post-vote', {vote: 'approved', email: user.email, uid: user.uid})
     },
 
     rejectVote: function(e) {
-        HTTP.post('/post-vote', {vote: 'rejected'})
+        var user = firebase.auth().currentUser;
+        HTTP.post('/post-vote', {vote: 'rejected', email: user.email, uid: user.uid})
     },
 
     clearVote: function(e) {
-        HTTP.post('/post-vote', {vote: 'cleared'})
+        var user = firebase.auth().currentUser;
+        HTTP.post('/post-vote', {vote: 'cleared', email: user.email, uid: user.uid})
     },
 
     render: function() {

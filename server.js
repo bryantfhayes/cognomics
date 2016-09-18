@@ -25,23 +25,9 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 app.use(express.static(path.join(__dirname,"/public")));
 
-var animals = [
-    "puppy",
-    "kitten",
-    "ferocious bear",
-    "penguin"
-];
-
-var ingredients = [{"id":1,"text":"ham"}, {"id":2,"text":"cheese"},{"id":3,"text":"potatoes"}];
-
-app.post('/deposit-cogbucks', function(req, res) {
-    //res.send(animals);
-    console.log("Received message: " + req.body.foo);
-    firebase.database().ref().child('players').child(0).child('cogbucks').set(0);
-});
 
 app.post('/post-vote', function(req, res) {
-    console.log("Received message: " + req.body.vote);
+    console.log("Received message: " + req.body.vote + " from " + req.body.email);
 });
 
 app.get('/ingredients', function(req, res) {
@@ -55,4 +41,4 @@ app.post('/', function(req, res){
   res.send(html);
 });
 
-app.listen(6060);
+app.listen(3303);

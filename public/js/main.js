@@ -21204,15 +21204,18 @@ var ActionButtons = React.createClass({
 
 
     approveVote: function (e) {
-        HTTP.post('/post-vote', { vote: 'approved' });
+        var user = firebase.auth().currentUser;
+        HTTP.post('/post-vote', { vote: 'approved', email: user.email, uid: user.uid });
     },
 
     rejectVote: function (e) {
-        HTTP.post('/post-vote', { vote: 'rejected' });
+        var user = firebase.auth().currentUser;
+        HTTP.post('/post-vote', { vote: 'rejected', email: user.email, uid: user.uid });
     },
 
     clearVote: function (e) {
-        HTTP.post('/post-vote', { vote: 'cleared' });
+        var user = firebase.auth().currentUser;
+        HTTP.post('/post-vote', { vote: 'cleared', email: user.email, uid: user.uid });
     },
 
     render: function () {
@@ -21232,7 +21235,48 @@ var ActionButtons = React.createClass({
 
 module.exports = ActionButtons;
 
-},{"../services/httpservices.js":179,"./Button.jsx":174,"react":170}],174:[function(require,module,exports){
+},{"../services/httpservices.js":181,"./Button.jsx":175,"react":170}],174:[function(require,module,exports){
+var React = require('react');
+
+var BasicNavbar = React.createClass({
+	displayName: "BasicNavbar",
+
+	render: function () {
+		return React.createElement(
+			"nav",
+			{ className: "navbar navbar-default" },
+			React.createElement(
+				"div",
+				{ className: "container-fluid" },
+				React.createElement(
+					"div",
+					{ className: "navbar-header" },
+					React.createElement(
+						"a",
+						{ className: "navbar-brand", href: "#" },
+						this.props.title
+					)
+				),
+				React.createElement(
+					"button",
+					{ type: "button", className: "btn btn-default navbar-btn navbar-right logout-button", onClick: this.props.logout },
+					"Logout"
+				),
+				React.createElement(
+					"p",
+					{ className: "navbar-text navbar-right logout-text" },
+					"Signed in as ",
+					this.props.username,
+					" "
+				)
+			)
+		);
+	}
+});
+
+module.exports = BasicNavbar;
+
+},{"react":170}],175:[function(require,module,exports){
 var React = require('react');
 
 var Button = React.createClass({
@@ -21251,51 +21295,255 @@ var Button = React.createClass({
 
 module.exports = Button;
 
-},{"react":170}],175:[function(require,module,exports){
+},{"react":170}],176:[function(require,module,exports){
 var React = require('react');
-var ListItem = require('./ListItem.jsx');
+var Table = require('./Table.jsx');
+var ActionButtons = require('./ActionButtons.jsx');
+var BasicNavbar = require('./BasicNavbar.jsx');
+var HTTP = require('../services/httpservices.js');
 
-var ingredients = [{ "id": 1, "text": "ham" }, { "id": 2, "text": "cheese" }];
+// Static Data
+var ruleHeader = [{ key: 'rule-id', label: 'Rule ID' }, { key: 'rule-description', label: 'Description' }];
 
-var List = React.createClass({
-	displayName: 'List',
+var stateHeader = [{ key: 'rule-number', label: 'Next Rule ID' }, { key: 'display-votes', label: 'Votes' }, { key: 'turn-status', label: 'Turn Status' }, { key: 'last-decision', label: 'Last Decision' }, { key: 'previous-rule', label: 'Previous Rule' }];
+
+var data = [{ key: 'name', label: 'Name' }, { key: 'email', label: 'Email' }, { key: 'cogbank', label: 'Cogbank' }, { key: 'cogbucks', label: 'Cogbucks' }, { key: 'voteweight', label: 'Vote Weight' }, { key: 'team', label: 'Team' }, { key: 'title', label: 'Title' }, { key: 'votestatus', label: 'Vote Status' }];
+
+var CognomicsApp = React.createClass({
+  displayName: 'CognomicsApp',
+
+  mixins: [ReactFireMixin],
+
+  getInitialState: function () {
+    return { playerdata: [], ruledata: [], statedata: [], proposedRule: "" };
+  },
+
+  componentDidMount: function () {
+    this.bindAsArray(firebase.database().ref().child('players'), 'playerdata');
+    this.bindAsObject(firebase.database().ref().child('rules'), 'ruledata');
+    this.bindAsArray(firebase.database().ref().child('state'), 'statedata');
+  },
+
+  onRuleChange: function (e) {
+    this.setState({
+      proposedRule: e.target.value
+    });
+  },
+
+  submitRule: function (e) {
+    console.log(this.state.proposedRule);
+    HTTP.post('/propose-rule', { rule: this.state.proposedRule });
+    firebase.database().ref().child('rules').child('proposed').child('description').set(this.state.proposedRule);
+  },
+
+  render: function () {
+    var user = firebase.auth().currentUser;
+    var proposedRuleInput = React.createElement('div', null);
+    var proposedRuleText = React.createElement('div', null);
+    if (true) {
+      proposedRuleInput = React.createElement(
+        'div',
+        { className: 'container col-sm-12' },
+        React.createElement('textarea', { className: 'form-control input-lg', onChange: this.onRuleChange }),
+        React.createElement(
+          'button',
+          { type: 'submit', className: 'btn btn-primary', onClick: this.submitRule },
+          'Submit'
+        )
+      );
+    } else {}
+
+    if (this.state.ruledata['proposed'] != undefined) {
+      proposedRuleText = React.createElement(
+        'p',
+        null,
+        this.state.ruledata['proposed'].description
+      );
+    }
+
+    return React.createElement(
+      'div',
+      { className: 'container-fluid' },
+      React.createElement(BasicNavbar, { username: user.displayName, title: 'Cognomics', logout: this.logout }),
+      React.createElement(
+        'div',
+        { className: 'jumbotron text-center' },
+        React.createElement(
+          'div',
+          { className: 'row' },
+          React.createElement(ActionButtons, null)
+        ),
+        React.createElement(
+          'div',
+          { className: 'row' },
+          React.createElement(
+            'center',
+            null,
+            React.createElement(
+              'div',
+              { className: 'table-responsive' },
+              React.createElement(Table, { child: 'players', cols: data, pollInterval: 2000 })
+            )
+          )
+        )
+      ),
+      React.createElement(
+        'div',
+        { className: 'jumbotron text-center' },
+        React.createElement(
+          'div',
+          { className: 'form-group' },
+          React.createElement(
+            'label',
+            null,
+            'Proposed Rule:'
+          ),
+          proposedRuleText,
+          proposedRuleInput
+        ),
+        React.createElement(
+          'center',
+          null,
+          React.createElement(
+            'div',
+            { className: 'table-responsive' },
+            React.createElement(Table, { child: 'state', cols: stateHeader, pollInterval: 2000, className: 'col-sm-6 col-sm-offset-3' })
+          )
+        )
+      ),
+      React.createElement(
+        'div',
+        { className: 'jumbotron text-center' },
+        React.createElement(
+          'center',
+          null,
+          React.createElement(
+            'div',
+            { className: 'table-responsive' },
+            React.createElement(Table, { child: 'rules', cols: ruleHeader, pollInterval: 2000, className: 'col-sm-6 col-sm-offset-3' })
+          )
+        )
+      )
+    );
+  },
+
+  logout: function () {
+    firebase.auth().signOut().then(function () {
+      // Sign-out successful.
+      this.props.loadSigninView();
+    }.bind(this), function (error) {
+      // An error happened.
+    });
+  }
+});
+
+module.exports = CognomicsApp;
+
+},{"../services/httpservices.js":181,"./ActionButtons.jsx":173,"./BasicNavbar.jsx":174,"./Table.jsx":179,"react":170}],177:[function(require,module,exports){
+var React = require('react');
+
+var provider = new firebase.auth.GoogleAuthProvider();
+
+var LoginScreen = React.createClass({
+    displayName: "LoginScreen",
+
+
+    componentDidMount: function () {
+        firebase.auth().onAuthStateChanged(function (user) {
+            if (user) {
+                // User is signed in.
+                console.log("User is logged in!");
+                this.props.loadAppView();
+            } else {
+                // No user is signed in.
+            }
+        }.bind(this));
+
+        return {};
+    },
+
+    render: function () {
+        return React.createElement(
+            "center",
+            null,
+            React.createElement(
+                "div",
+                { className: "vertical-center col-sm-12" },
+                React.createElement(
+                    "div",
+                    { className: "container" },
+                    React.createElement(
+                        "button",
+                        { className: "btn btn-lg btn-primary", type: "submit", onClick: this.handleLogin },
+                        "Sign in"
+                    )
+                )
+            )
+        );
+    },
+
+    handleLogin: function () {
+        firebase.auth().signInWithPopup(provider).then(function (result) {
+            // This gives you a Google Access Token. You can use it to access the Google API.
+            var token = result.credential.accessToken;
+            // The signed-in user info.
+            var user = result.user;
+            // ...
+            console.log(user);
+        }).catch(function (error) {
+            // Handle Errors here.
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            // The email of the user's account used.
+            var email = error.email;
+            // The firebase.auth.AuthCredential type that was used.
+            var credential = error.credential;
+            // ...
+            console.log(errorMessage);
+        });
+    }
+});
+
+module.exports = LoginScreen;
+
+},{"react":170}],178:[function(require,module,exports){
+var React = require('react');
+var LoginScreen = require('./LoginScreen.jsx');
+var CognomicsApp = require('./CognomicsApp.jsx');
+
+var Manager = React.createClass({
+	displayName: 'Manager',
+
+
+	getInitialState() {
+		return { view: 0 };
+	},
 
 	render: function () {
-		var listItems = ingredients.map(function (item) {
-			return React.createElement(ListItem, { key: item.id, ingredient: item.text });
+		switch (this.state.view) {
+			case 0:
+				return React.createElement(LoginScreen, { loadAppView: this.loadAppView });
+			case 1:
+				return React.createElement(CognomicsApp, { loadSigninView: this.loadSigninView });
+		}
+	},
+
+	loadAppView: function () {
+		this.setState({
+			view: 1
 		});
+	},
 
-		return React.createElement(
-			'ul',
-			null,
-			listItems
-		);
+	loadSigninView: function () {
+		this.setState({
+			view: 0
+		});
 	}
 });
 
-module.exports = List;
+module.exports = Manager;
 
-},{"./ListItem.jsx":176,"react":170}],176:[function(require,module,exports){
-var React = require('react');
-var ListItem = React.createClass({
-	displayName: 'ListItem',
-
-	render: function () {
-		return React.createElement(
-			'li',
-			null,
-			React.createElement(
-				'h4',
-				null,
-				this.props.ingredient
-			)
-		);
-	}
-});
-
-module.exports = ListItem;
-
-},{"react":170}],177:[function(require,module,exports){
+},{"./CognomicsApp.jsx":176,"./LoginScreen.jsx":177,"react":170}],179:[function(require,module,exports){
 var React = require('react');
 var ReactDOM = require('react-dom');
 
@@ -21305,7 +21553,7 @@ var Table = React.createClass({
     mixins: [ReactFireMixin],
 
     getInitialState: function () {
-        return { data: [], fire: {} };
+        return { data: [] };
     },
 
     update: function () {
@@ -21389,12 +21637,10 @@ var Table = React.createClass({
 
 module.exports = Table;
 
-},{"react":170,"react-dom":1}],178:[function(require,module,exports){
+},{"react":170,"react-dom":1}],180:[function(require,module,exports){
 var React = require('react');
 var ReactDOM = require('react-dom');
-var List = require('./components/List.jsx');
-var Table = require('./components/Table.jsx');
-var ActionButtons = require('./components/ActionButtons.jsx');
+var Manager = require('./components/Manager.jsx');
 
 // Initialize Firebase
 var config = {
@@ -21405,23 +21651,18 @@ var config = {
 };
 firebase.initializeApp(config);
 
-// Static Data
-var data = [{ key: 'name', label: 'Name' }, { key: 'email', label: 'Email' }, { key: 'cogbank', label: 'Cogbank' }, { key: 'cogbucks', label: 'Cogbucks' }, { key: 'voteweight', label: 'Vote Weight' }, { key: 'team', label: 'Team' }, { key: 'title', label: 'Title' }, { key: 'votestatus', label: 'Vote Status' }];
-
-// Static Data
-var ruleHeader = [{ key: 'rule-id', label: 'Rule ID' }, { key: 'rule-description', label: 'Description' }];
-
-var stateHeader = [{ key: 'rule-number', label: 'Next Rule ID' }, { key: 'display-votes', label: 'Votes' }, { key: 'turn-status', label: 'Turn Status' }, { key: 'last-decision', label: 'Last Decision' }, { key: 'previous-rule', label: 'Previous Rule' }];
+// Load components
+ReactDOM.render(React.createElement(Manager, null), document.getElementById('content'));
 
 // Load components
-ReactDOM.render(React.createElement(Table, { child: 'players', cols: data, pollInterval: 2000 }), document.getElementById('table'));
-ReactDOM.render(React.createElement(Table, { child: 'rules', cols: ruleHeader, pollInterval: 2000 }), document.getElementById('rule-table'));
-ReactDOM.render(React.createElement(Table, { child: 'state', cols: stateHeader, pollInterval: 2000 }), document.getElementById('state-table'));
-ReactDOM.render(React.createElement(ActionButtons, null), document.getElementById('action-btns'));
+//ReactDOM.render(<Table child={'players'} cols={data} pollInterval={2000} />, document.getElementById('table'));
+//ReactDOM.render(<Table child={'rules'} cols={ruleHeader} pollInterval={2000} />, document.getElementById('rule-table'));
+//ReactDOM.render(<Table child={'state'} cols={stateHeader} pollInterval={2000} />, document.getElementById('state-table'));
+//ReactDOM.render(<ActionButtons />, document.getElementById('action-btns'));
 
-},{"./components/ActionButtons.jsx":173,"./components/List.jsx":175,"./components/Table.jsx":177,"react":170,"react-dom":1}],179:[function(require,module,exports){
+},{"./components/Manager.jsx":178,"react":170,"react-dom":1}],181:[function(require,module,exports){
 var Fetch = require('whatwg-fetch');
-var baseUrl = 'http://localhost:6060';
+var baseUrl = 'http://houseofhayes.no-ip.org:3303';
 
 var service = {
 	get: function (url) {
@@ -21445,4 +21686,4 @@ var service = {
 
 module.exports = service;
 
-},{"whatwg-fetch":172}]},{},[178]);
+},{"whatwg-fetch":172}]},{},[180]);

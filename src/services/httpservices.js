@@ -1,5 +1,5 @@
 var Fetch = require('whatwg-fetch');
-var baseUrl = 'http://localhost:6060';
+var baseUrl = 'http://houseofhayes.no-ip.org:3303';
 
 var service = {
 	get: function(url) {
